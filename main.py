@@ -3,4 +3,4 @@
 import sys
 from puzzle import Puzzle
 
-Puzzle(sys.argv[1]).solve()
+Puzzle(sys.argv[1]).solve().format()

@@ -21,23 +21,35 @@ def load_puzzle(filename):
                 break
     return tiles
 
-def finished(tiles):
-    return all([x > 0 for x in tiles.values()])
-
 def fill(x, y, n):
     def set_n(tiles):
         tiles[(x, y)] = n
         return tiles
     return set_n
 
+solutions = {}
+visited = {}
 def start_search(x, y, v):
+    def serialize(tiles):
+        l = []
+        for x in range(9):
+            for y in range(9):
+                l.append(tiles[(x, y)])
+        return ''.join([str(x) for x in l])
+
     def backtrack(tiles):
         for n in v:
             tiles[(x, y)] = n
-            nt = Puzzle(tiles).solve()
-            if nt is None:
+            text = serialize(tiles)
+            if text in visited:
                 continue
-            return nt.tiles
+            nt = Puzzle(tiles).solve()
+            visited[text] = True
+            if nt is None or nt.status != 'good':
+                continue
+            soltext = serialize(nt.tiles)
+            solutions[soltext] = nt.tiles
+        return solutions
     return backtrack
 
 def verify(tiles):
@@ -101,30 +113,49 @@ def analyze(tiles):
 
     return start_search(*min(candidates, key=branches))
 
+def format_tiles(tiles, write):
+    for y in range(9):
+        for x in range(9):
+            write(str(tiles.get((x, y), '?')))
+        write('\n')
+
 class Puzzle:
     def __init__(self, source):
         if isinstance(source, str):
             self.tiles = load_puzzle(source)
         else:
             self.tiles = dict(source)
+        self.status = 'good'
+
+    def finished(self):
+        if self.status != 'good':
+            return True
+        return all([x > 0 for x in self.tiles.values()])
 
     def solve(self):
         if not verify(self.tiles):
             return None
 
-        while not finished(self.tiles):
+        while not self.finished():
             action = analyze(self.tiles)
             if action is None:
                 return None
             data = action(self.tiles)
             if data is None:
                 return None
-            self.tiles = data
+            if data == solutions:
+                ns = len(data.keys())
+                if ns > 1:
+                    self.status = 'false'
+                elif ns == 1:
+                    self.tiles = list(data.values())[0]
         return self
 
     def format(self):
-        write = sys.stdout.write
-        for y in range(9):
-            for x in range(9):
-                write(str(self.tiles.get((x, y), '?')))
-            write('\n')
+        if self.status == 'good':
+            format_tiles(self.tiles, sys.stdout.write)
+        elif self.status == 'false':
+            print(f'false game, found {len(solutions.keys())} solutions:')
+            for s in solutions.values():
+                print('-'*9)
+                format_tiles(s, sys.stdout.write)

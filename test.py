@@ -10,5 +10,5 @@ for p in puzzles:
         with open(spath) as f:
             expect = f.read()
             if out != expect:
-                print(f'output:\n{out}\nexpect:\n{expect}\n')
+                print(f'path:{path}\noutput:\n{out}\nexpect:\n{expect}\n')
                 os._exit(1)

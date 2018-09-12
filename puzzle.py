@@ -1,6 +1,6 @@
 import sys
 
-def _load_puzzle(filename):
+def load_puzzle(filename):
     tiles = {}
     with open(filename) as f:
         lines = f.read().split('\n')
@@ -10,15 +10,19 @@ def _load_puzzle(filename):
             for char in line:
                 try:
                     tiles[(x, y)] = int(char)
-                except:
-                    pass
+                except ValueError:
+                    tiles[(x, y)] = 0
                 x += 1
+            for i in range(9):
+                if (i, y) not in tiles:
+                    tiles[(i, y)] = 0
             y += 1
+            if y >= 9:
+                break
     return tiles
 
 def finished(tiles):
-    return len(tiles.keys()) == 81 and \
-        all([lambda x: isinstance(x, int) for x in tiles.values()])
+    return all([x > 0 for x in tiles.values()])
 
 def fill(x, y, n):
     def set_n(tiles):
@@ -41,11 +45,11 @@ def verify(tiles):
         return len(l) > len(set(l))
 
     for x in range(9):
-        col = [i for i in [tiles.get((x, y), 0) for y in range(9)] if i > 0]
+        col = [i for i in [tiles[(x, y)] for y in range(9)] if i > 0]
         if dup_found(col):
             return False
 
-        row = [i for i in [tiles.get((y, x), 0) for y in range(9)] if i > 0]
+        row = [i for i in [tiles[(y, x)] for y in range(9)] if i > 0]
         if dup_found(row):
             return False
 
@@ -55,7 +59,7 @@ def verify(tiles):
             ix = x//3*3
             iy = y//3*3
             l = d.setdefault((ix, iy), [])
-            n = tiles.get((x, y), 0)
+            n = tiles[(x, y)]
             if n > 0 and n in l:
                 return False
     return True
@@ -64,18 +68,18 @@ def analyze(tiles):
     def rule_out(x, y):
         s = set(range(1, 10))
         for ix in range(9):
-            v = tiles.get((ix, y), 0)
+            v = tiles[(ix, y)]
             if v > 0:
                 s -= set([v])
         for iy in range(9):
-            v = tiles.get((x, iy), 0)
+            v = tiles[(x, iy)]
             if v > 0:
                 s -= set([v])
         x0 = x//3*3
         y0 = y//3*3
         for ix in range(x0, x0+3):
             for iy in range(y0, y0+3):
-                v = tiles.get((ix, iy), 0)
+                v = tiles[(ix, iy)]
                 if v > 0:
                     s -= set([v])
         return s
@@ -83,8 +87,7 @@ def analyze(tiles):
     candidates = []
     for x in range(9):
         for y in range(9):
-            v = tiles.get((x, y), set())
-            if isinstance(v, int):
+            if tiles[(x, y)] > 0:
                 continue
             v = rule_out(x, y)
             if len(v) == 0:
@@ -101,7 +104,7 @@ def analyze(tiles):
 class Puzzle:
     def __init__(self, source):
         if isinstance(source, str):
-            self.tiles = _load_puzzle(source)
+            self.tiles = load_puzzle(source)
         else:
             self.tiles = dict(source)
 

@@ -88,14 +88,13 @@ def analyze(tiles):
                 continue
             v = rule_out(x, y)
             if len(v) == 0:
-                return 'give_up'
+                return None
             if len(v) == 1:
                 return fill(x, y, v.pop())
             candidates.append((x, y, v))
 
-    def branches(candidate):
-        x, y, v = candidate
-        return len(v)
+    def branches(c):
+        return len(c[2])
 
     return start_search(*min(candidates, key=branches))
 
@@ -112,7 +111,7 @@ class Puzzle:
 
         while not finished(self.tiles):
             action = analyze(self.tiles)
-            if action == 'give_up':
+            if action is None:
                 return None
             data = action(self.tiles)
             if data is None:

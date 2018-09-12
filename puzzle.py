@@ -128,8 +128,6 @@ class Puzzle:
         self.status = 'good'
 
     def finished(self):
-        if self.status != 'good':
-            return True
         return all([x > 0 for x in self.tiles.values()])
 
     def solve(self):
@@ -147,7 +145,8 @@ class Puzzle:
                 ns = len(data.keys())
                 if ns > 1:
                     self.status = 'false'
-                elif ns == 1:
+                    return self
+                if ns == 1:
                     self.tiles = list(data.values())[0]
         return self
 

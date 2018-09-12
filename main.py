@@ -3,4 +3,8 @@
 import sys
 from puzzle import Puzzle
 
-Puzzle(sys.argv[1]).solve().format()
+p = Puzzle(sys.argv[1]).solve()
+if p is None:
+    print('bad game')
+else:
+    p.format()

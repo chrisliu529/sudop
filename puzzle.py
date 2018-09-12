@@ -1,5 +1,6 @@
 import sys
 
+given = {}
 def load_puzzle(filename):
     tiles = {}
     with open(filename) as f:
@@ -10,6 +11,7 @@ def load_puzzle(filename):
             for char in line:
                 try:
                     tiles[(x, y)] = int(char)
+                    given[(x, y)] = True
                 except ValueError:
                     tiles[(x, y)] = 0
                 x += 1
@@ -116,7 +118,11 @@ def analyze(tiles):
 def format_tiles(tiles, write):
     for y in range(9):
         for x in range(9):
-            write(str(tiles.get((x, y), '?')))
+            v = str(tiles.get((x, y), '?'))
+            if (x, y) in given:
+                write(f'\033[91m{v}\033[00m')
+            else:
+                write(v)
         write('\n')
 
 class Puzzle:

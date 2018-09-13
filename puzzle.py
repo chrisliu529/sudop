@@ -1,4 +1,5 @@
 import sys
+from collections import namedtuple
 
 given = {}
 def load_puzzle(filename):
@@ -26,32 +27,28 @@ def load_puzzle(filename):
 def fill(x, y, n):
     def set_n(tiles):
         tiles[(x, y)] = n
-        return tiles
     return set_n
 
-solutions = {}
+def serialize(tiles):
+    l = []
+    for x in range(9):
+        for y in range(9):
+            l.append(tiles[(x, y)])
+    return ''.join([str(x) for x in l])
+
 visited = {}
 def start_search(x, y, v):
-    def serialize(tiles):
-        l = []
-        for x in range(9):
-            for y in range(9):
-                l.append(tiles[(x, y)])
-        return ''.join([str(x) for x in l])
-
-    def backtrack(tiles):
+    def backtrack(p):
         for n in v:
-            tiles[(x, y)] = n
-            text = serialize(tiles)
+            p.tiles[(x, y)] = n
+            text = serialize(p.tiles)
             if text in visited:
                 continue
-            nt = Puzzle(tiles).solve()
+            p2 = Puzzle(p.tiles)
+            p2.solve()
             visited[text] = True
-            if nt is None or nt.status != 'good':
-                continue
-            soltext = serialize(nt.tiles)
-            solutions[soltext] = nt.tiles
-        return solutions
+            if p2.solutions:
+                p.solutions.update(p2.solutions)
     return backtrack
 
 def verify(tiles):
@@ -78,6 +75,7 @@ def verify(tiles):
                 return False
     return True
 
+Action = namedtuple('Action', 'name func')
 def analyze(tiles):
     def rule_out(x, y):
         s = set(range(1, 10))
@@ -105,15 +103,15 @@ def analyze(tiles):
                 continue
             v = rule_out(x, y)
             if len(v) == 0:
-                return None
+                return Action(name='give_up', func=None)
             if len(v) == 1:
-                return fill(x, y, v.pop())
+                return Action(name='fill', func=fill(x, y, v.pop()))
             candidates.append((x, y, v))
 
     def branches(c):
         return len(c[2])
 
-    return start_search(*min(candidates, key=branches))
+    return Action(name='search', func=start_search(*min(candidates, key=branches)))
 
 def format_tiles(tiles, write):
     for y in range(9):
@@ -127,40 +125,42 @@ def format_tiles(tiles, write):
 
 class Puzzle:
     def __init__(self, source):
+        self.solutions = {}
         if isinstance(source, str):
             self.tiles = load_puzzle(source)
         else:
             self.tiles = dict(source)
-        self.status = 'good'
 
     def finished(self):
         return all([x > 0 for x in self.tiles.values()])
 
     def solve(self):
         if not verify(self.tiles):
-            return None
+            return self
 
         while not self.finished():
             action = analyze(self.tiles)
-            if action is None:
-                return None
-            data = action(self.tiles)
-            if data is None:
-                return None
-            if data == solutions:
-                ns = len(data.keys())
-                if ns > 1:
-                    self.status = 'false'
-                    return self
-                if ns == 1:
-                    self.tiles = list(data.values())[0]
+            if action.name == 'give_up':
+                return self
+            elif action.name == 'search':
+                action.func(self)
+                return self
+            else: # fill
+                action.func(self.tiles)
+
+        self.solutions[serialize(self.tiles)] = self.tiles
         return self
 
     def format(self):
-        if self.status == 'good':
-            format_tiles(self.tiles, sys.stdout.write)
-        elif self.status == 'false':
-            print(f'false game, found {len(solutions.keys())} solutions:')
-            for s in solutions.values():
-                print('-'*9)
-                format_tiles(s, sys.stdout.write)
+        if not self.solutions:
+            print('bad game')
+        else:
+            ns = len(self.solutions.keys())
+            solutions = self.solutions.values()
+            if ns > 1:
+                print(f'false game, found {ns} solutions:')
+                for s in solutions:
+                    print('-'*9)
+                    format_tiles(s, sys.stdout.write)
+            else:
+                format_tiles(list(solutions)[0], sys.stdout.write)

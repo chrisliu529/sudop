@@ -69,11 +69,11 @@ def verify(tiles):
         for y in range(9):
             ix = x//3*3
             iy = y//3*3
-            l = d.setdefault((ix, iy), [])
+            s = d.setdefault((ix, iy), set())
             n = tiles[(x, y)]
-            if n > 0 and n in l:
+            if n > 0 and n in s:
                 return False
-            l.append(n)
+            s.add(n)
     return True
 
 Action = namedtuple('Action', 'name func')

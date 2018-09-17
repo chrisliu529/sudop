@@ -73,6 +73,7 @@ def verify(tiles):
             n = tiles[(x, y)]
             if n > 0 and n in l:
                 return False
+            l.append(n)
     return True
 
 Action = namedtuple('Action', 'name func')

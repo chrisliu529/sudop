@@ -52,17 +52,21 @@ def start_search(x, y, v):
     return backtrack
 
 def verify(tiles):
-    def dup_found(l):
-        return len(l) > len(set(l))
+    for x in range(9):
+        s = set()
+        for y in range(9):
+            n = tiles[(x, y)]
+            if n > 0 and n in s:
+                return False
+            s.add(n)
 
     for x in range(9):
-        col = [i for i in [tiles[(x, y)] for y in range(9)] if i > 0]
-        if dup_found(col):
-            return False
-
-        row = [i for i in [tiles[(y, x)] for y in range(9)] if i > 0]
-        if dup_found(row):
-            return False
+        s = set()
+        for y in range(9):
+            n = tiles[(y, x)]
+            if n > 0 and n in s:
+                return False
+            s.add(n)
 
     d = {}
     for x in range(9):

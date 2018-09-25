@@ -47,7 +47,7 @@ def start_search(x, y, v):
             text = serialize(p.tiles)
             if text in visited:
                 continue
-            p2 = Puzzle(p.tiles, p.output_details)
+            p2 = Puzzle(p)
             p2.solve()
             visited[text] = True
             if p2.solutions:
@@ -96,13 +96,13 @@ def format_tiles(tiles, write):
         write('\n')
 
 class Puzzle:
-    def __init__(self, source, output_details):
-        self.output_details = output_details
+    def __init__(self, source):
         self.solutions = {}
         if isinstance(source, str):
             self.tiles = load_puzzle(source)
         else:
-            self.tiles = dict(source)
+            self.tiles = dict(source.tiles)
+            self.output_details = source.output_details
 
     def finished(self):
         return all([x > 0 for x in self.tiles.values()])

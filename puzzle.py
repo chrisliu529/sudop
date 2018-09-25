@@ -43,11 +43,12 @@ def start_search(x, y, v):
     def backtrack(p):
         p.trace(f'backtrack on ({x+1}, {y+1}) with {v}')
         for n in v:
-            p.tiles[(x, y)] = n
-            text = serialize(p.tiles)
+            p2 = Puzzle(p)
+            p2.trace(p2.level*'*' + f'({x+1}, {y+1})={n}')
+            p2.tiles[(x, y)] = n
+            text = serialize(p2.tiles)
             if text in visited:
                 continue
-            p2 = Puzzle(p)
             p2.solve()
             visited[text] = True
             if p2.solutions:
@@ -98,11 +99,13 @@ def format_tiles(tiles, write):
 class Puzzle:
     def __init__(self, source):
         self.solutions = {}
+        self.level = 0
         if isinstance(source, str):
             self.tiles = load_puzzle(source)
         else:
             self.tiles = dict(source.tiles)
             self.output_details = source.output_details
+            self.level = source.level + 1
 
     def finished(self):
         return all([x > 0 for x in self.tiles.values()])

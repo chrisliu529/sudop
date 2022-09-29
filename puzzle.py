@@ -4,27 +4,37 @@ from collections import namedtuple
 given = {}
 
 
-def load_puzzle(filename):
+def load_puzzle_str(content):
     tiles = {}
-    with open(filename) as f:
-        lines = f.read().split('\n')
-        y = 0
-        for line in lines:
-            x = 0
-            for char in line:
-                try:
-                    tiles[(x, y)] = int(char)
-                    given[(x, y)] = True
-                except ValueError:
-                    tiles[(x, y)] = 0
-                x += 1
-            for i in range(9):
-                if (i, y) not in tiles:
-                    tiles[(i, y)] = 0
-            y += 1
-            if y >= 9:
-                break
+    lines = content.split('\n')
+    y = 0
+
+    # remove the first empty line of multi-lines string
+    # to make it easer to input game in notebook env
+    if len(lines) > 9 and lines[0] == '':
+        lines = lines[1:]
+
+    for line in lines:
+        x = 0
+        for char in line:
+            try:
+                tiles[(x, y)] = int(char)
+                given[(x, y)] = True
+            except ValueError:
+                tiles[(x, y)] = 0
+            x += 1
+        for i in range(9):
+            if (i, y) not in tiles:
+                tiles[(i, y)] = 0
+        y += 1
+        if y >= 9:
+            break
     return tiles
+
+
+def load_puzzle_file(filename):
+    with open(filename) as f:
+        return load_puzzle_str(f.read())
 
 
 def fill(x, y, n):
@@ -108,7 +118,10 @@ class Puzzle:
         self.solutions = {}
         self.level = 0
         if isinstance(source, str):
-            self.tiles = load_puzzle(source)
+            if '\n' in source:
+                self.tiles = load_puzzle_str(source)
+            else:
+                self.tiles = load_puzzle_file(source)
         else:
             self.tiles = dict(source.tiles)
             self.level = source.level + 1

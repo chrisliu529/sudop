@@ -2,6 +2,8 @@ import sys
 from collections import namedtuple
 
 given = {}
+
+
 def load_puzzle(filename):
     tiles = {}
     with open(filename) as f:
@@ -24,12 +26,12 @@ def load_puzzle(filename):
                 break
     return tiles
 
+
 def fill(x, y, n):
     def set_n(p):
-        if p.output_details:
-            p.trace(f'({x+1}, {y+1})={n}')
         p.tiles[(x, y)] = n
     return set_n
+
 
 def serialize(tiles):
     l = []
@@ -38,13 +40,14 @@ def serialize(tiles):
             l.append(tiles[(x, y)])
     return ''.join([str(x) for x in l])
 
+
 visited = {}
+
+
 def start_search(x, y, v):
     def backtrack(p):
-        p.trace(f'backtrack on ({x+1}, {y+1}) with {v}')
         for n in v:
             p2 = Puzzle(p)
-            p2.trace(p2.level*'*' + f'({x+1}, {y+1})={n}')
             p2.tiles[(x, y)] = n
             text = serialize(p2.tiles)
             if text in visited:
@@ -54,6 +57,7 @@ def start_search(x, y, v):
             if p2.solutions:
                 p.solutions.update(p2.solutions)
     return backtrack
+
 
 def verify(tiles):
     for x in range(9):
@@ -84,7 +88,9 @@ def verify(tiles):
             s.add(n)
     return True
 
+
 Action = namedtuple('Action', 'name func')
+
 
 def format_tiles(tiles, write):
     for y in range(9):
@@ -96,6 +102,7 @@ def format_tiles(tiles, write):
                 write(v)
         write('\n')
 
+
 class Puzzle:
     def __init__(self, source):
         self.solutions = {}
@@ -104,7 +111,6 @@ class Puzzle:
             self.tiles = load_puzzle(source)
         else:
             self.tiles = dict(source.tiles)
-            self.output_details = source.output_details
             self.level = source.level + 1
 
     def finished(self):
@@ -112,6 +118,7 @@ class Puzzle:
 
     def analyze(self):
         tiles = self.tiles
+
         def rule_out(x, y):
             s = set(range(1, 10))
             for ix in range(9):
@@ -138,7 +145,6 @@ class Puzzle:
                     continue
                 v = rule_out(x, y)
                 if len(v) == 0:
-                    self.trace(f'give up on ({x+1}, {y+1})')
                     return Action(name='give_up', func=None)
                 if len(v) == 1:
                     return Action(name='fill', func=fill(x, y, v.pop()))
@@ -160,15 +166,11 @@ class Puzzle:
             elif action.name == 'search':
                 action.func(self)
                 return self
-            else: # fill
+            else:  # fill
                 action.func(self)
 
         self.solutions[serialize(self.tiles)] = self.tiles
         return self
-
-    def trace(self, msg):
-        if self.output_details:
-            print(msg)
 
     def format(self):
         if not self.solutions:
